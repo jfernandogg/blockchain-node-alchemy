@@ -26,7 +26,7 @@ async function signMessage(msg,privateKey) {
 }
 
 async function main() {
-    const iv = "f0f1f2f3f4f5f6f7f8f9fafbfcfdfeff";
+    const iv = "f0f1f2f3f4f5f6f7f8f9fafbfcfdfeff"; // TODO: Replace with your unique iv, this is very important.
 
     //read a password from the user and confirm it
     const password = readLine.question("Enter a password: ", {
@@ -39,15 +39,11 @@ async function main() {
         console.log("Passwords do not match");
         return;
     }
-    const key = await scrypt(utf8ToBytes(password), utf8ToBytes("coap"), 262144, 8, 2, 16)
+    const key = await scrypt(utf8ToBytes(password), utf8ToBytes("coap"), 262144, 8, 2, 16); // TODO: Replace coap with your own salt. It's very important
     console.log("key:"+toHex(key));
     
     const privateKey = secp.secp256k1.utils.randomPrivateKey();
-    //encrypt privateKey with password
-    
     const encryptedPrivateKey = await encrypt(privateKey, key, hexToBytes(iv));
-    
-    //print out the encryptedPrivateKey in hex format
     console.log("Encrypted Private Key: "+toHex(encryptedPrivateKey));
     
     const publicKey = secp256k1.getPublicKey(privateKey);
