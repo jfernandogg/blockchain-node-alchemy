@@ -1,7 +1,7 @@
 const secp = require("ethereum-cryptography/secp256k1");
 const {secp256k1} = require("ethereum-cryptography/secp256k1");
 const { keccak256 } = require("ethereum-cryptography/keccak");
-const { encrypt } = require("ethereum-cryptography/aes.js");
+const { encrypt, decrypt } = require("ethereum-cryptography/aes.js");
 const { scrypt } = require("ethereum-cryptography/scrypt");
 const { toHex, utf8ToBytes,hexToBytes,bytesToUtf8 } = require("ethereum-cryptography/utils");
 const readLine = require("readline-sync");
@@ -43,9 +43,13 @@ async function main() {
     console.log("key:"+toHex(key));
     
     const privateKey = secp.secp256k1.utils.randomPrivateKey();
+    console.log("Privatekey:"+privateKey);
+    console.log("longitud private key: "+privateKey.length);
     const encryptedPrivateKey = await encrypt(privateKey, key, hexToBytes(iv));
     console.log("Encrypted Private Key: "+toHex(encryptedPrivateKey));
-    
+
+    const t = await decrypt(hexToBytes(toHex(encryptedPrivateKey)), key, hexToBytes("f0f1f2f3f4f5f6f7f8f9fafbfcfdfeff"));
+    console.log("Long al desencriptar: "+t.length)
     const publicKey = secp256k1.getPublicKey(privateKey);
     console.log("Public Key: "+toHex(publicKey));
     console.log("Address: "+toHex(getAddress(publicKey)));
