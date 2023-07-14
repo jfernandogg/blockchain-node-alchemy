@@ -1,3 +1,8 @@
+const { secp256k1 } = require("ethereum-cryptography/secp256k1");
+const { keccak256 } = require("ethereum-cryptography/keccak");
+const { toHex, utf8ToBytes,hexToBytes,bytesToUtf8 } = require("ethereum-cryptography/utils");
+
+
 const express = require("express");
 const app = express();
 const cors = require("cors");
@@ -12,19 +17,30 @@ const balances = {
   "0x5a2f931dbc313e78e1cb758459be62498c0291bc": {balance: 75}
 };
 
+
+function hashMessage(message) {
+  return keccak256(utf8ToBytes(message));
+}
+
 app.get("/balance/:address", (req, res) => {
   const { address } = req.params;
   const balance = balances[address]["balance"] || 0;
   res.send({ balance });
 });
 
-app.post("/send", (req, res) => {
-  const { sender, recipient, amount, signature } = req.body;
+app.post("/send", async (req, res) => {
+  const { sender, recipient, amount, signature, publickey } = req.body;
 
   setInitialBalance(sender);
-  setInitialBalance(recipient);
-  console.log("signature r:" + signature.r + " s:" + signature.s + " v:" + signature.recovery );
-  //const recoveredKey = recoverKey(sender, signature, signature.recoveryParam);
+  setInitialBalance(recipient); 
+  try {
+    const s = secp256k1.Signature.fromDER(signature); //reinstantiate a Signature object from the signature object received from the frontend
+    const isValid = await secp256k1.verify(s, hashMessage(sender+recipient+amount), hexToBytes(publickey));
+  }
+  catch (e) {
+    console.log(e);
+    res.status(400).send({ message: "Invalid signature!" });
+  }
   if (balances[sender]["balance"] < amount) {
     res.status(400).send({ message: "Not enough funds!" });
   } else {
@@ -44,6 +60,4 @@ function setInitialBalance(address) {
   }
 }
 
-async function recoverKey(message, signature, recoveryBit) {
-  return secp.recoverPublicKey(hashMessage(message), signature, recoveryBit);
-}
+

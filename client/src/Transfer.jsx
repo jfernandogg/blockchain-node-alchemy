@@ -32,20 +32,17 @@ function Transfer({ address, setBalance }) {
       // decrypt(cypherText: Uint8Array, key: Uint8Array, iv: Uint8Array
       const key = await scrypt(utf8ToBytes(pkPass), utf8ToBytes("coap"), 262144, 8, 2, 16);
       const PKDecrypted = await decrypt(hexToBytes(PK), key, hexToBytes("f0f1f2f3f4f5f6f7f8f9fafbfcfdfeff"));
-      console.log("se pudo desencriptar la clave privada: ", PKDecrypted.length);
+      const publickey = secp256k1.getPublicKey(PKDecrypted);
       // Sign transaction
-      console.log("se esta firmando la transaccion: ", address+recipient+sendAmount);
-      const signatured = await signMessage(address+recipient+sendAmount, PKDecrypted);
-      console.log("se pudo firmar la transaccion");
-      console.log("signature: ", signatured);
-
+      const signatured = (await signMessage(address+recipient+sendAmount, PKDecrypted)).toDERHex();
       const {
         data: { balance },
       } = await server.post(`send`, {
         sender: address,
         amount: parseInt(sendAmount),
         recipient,
-        signature: { r: signatured.r.toString(16), s: signatured.s.toString(16), recovery: signatured.recovery },
+        signature: signatured,
+        publickey: toHex(publickey),
       });
       setBalance(balance);
     } catch (ex) {
@@ -83,7 +80,7 @@ function Transfer({ address, setBalance }) {
 
       <label>
         private Key Password:
-        <input placeholder="Type your private key password" value={pkPass} onChange={setValue(setPkPass)}></input>
+        <input type="password" placeholder="Type your private key password" value={pkPass} onChange={setValue(setPkPass)}></input>
       </label>
 
       <input type="submit" className="button" value="Transfer" />
