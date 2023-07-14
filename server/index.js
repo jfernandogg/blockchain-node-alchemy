@@ -22,6 +22,12 @@ function hashMessage(message) {
   return keccak256(utf8ToBytes(message));
 }
 
+function getAddress(publicKey) {
+  let a = publicKey.slice(1,publicKey.len);
+  kck = keccak256(a);
+  return kck.slice(kck.length-20);
+}
+
 app.get("/balance/:address", (req, res) => {
   const { address } = req.params;
   const balance = balances[address]["balance"] || 0;
@@ -33,6 +39,18 @@ app.post("/send", async (req, res) => {
 
   setInitialBalance(sender);
   setInitialBalance(recipient); 
+
+  //Validate address is from publicKey
+  console.log("Address from publickey: 0x"+toHex(getAddress(hexToBytes(publickey))));
+  console.log("Address from sender: "+sender);
+  if ( "0x"+toHex(getAddress(hexToBytes(publickey))) != sender) {
+    console.error("No coincidence between address from publickey and sender");
+    res.status(400).send({ message: "Invalid sender address!" });
+    // stop execution of the function
+    return;
+  }
+
+
   try {
     const s = secp256k1.Signature.fromDER(signature); //reinstantiate a Signature object from the signature object received from the frontend
     const isValid = await secp256k1.verify(s, hashMessage(sender+recipient+amount), hexToBytes(publickey));

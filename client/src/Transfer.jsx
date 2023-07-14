@@ -47,7 +47,7 @@ function Transfer({ address, setBalance }) {
       setBalance(balance);
     } catch (ex) {
       alert("trying to send transaction "+ex);
-      //alert(ex.response.data.message);
+      alert(ex.response.data.message);
     }
   }
 
